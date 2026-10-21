@@ -9,6 +9,7 @@
 pub mod album_picker;
 pub mod brush_live;
 pub mod button;
+pub mod c0_host;
 pub mod canvas_keys;
 mod command_error;
 pub mod control;
@@ -337,6 +338,7 @@ impl QuitPrompt {
 }
 
 pub struct LightcraftApp {
+    pub c0: c0_host::Host,
     pub(crate) model_setup: model_setup::Pending,
     /// Per-catalog-revision caches of library-wide results the panels show every frame
     /// (expensive on big libraries).
@@ -485,6 +487,7 @@ impl LightcraftApp {
         // AI mask requests run on the model's worker; frames apply their results (never wait)
         session.segmenter.background = true;
         Self {
+            c0: c0_host::Host::default(),
             session,
             ui: UiState::default(),
             services,

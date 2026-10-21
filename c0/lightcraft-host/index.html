@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C0light</title>
+  <link rel="icon" href="data:,">
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    #lightcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    #lightcraft_loading, #lightcraft_status { display: none; }
+  </style>
+  <script>
+    window.__c0hostRequest = (json) => window.__lightcraftControl(json);
+  </script>
+</head>
+<body>
+  <canvas id="lightcraft_canvas"></canvas>
+  <div id="lightcraft_loading"></div>
+  <div id="lightcraft_status" aria-live="polite"></div>
+  <script type="module">
+    import init, { start, command } from "./lightcraft_web.js";
+    (async () => {
+      const config = await fetch("./guest-config.json").then(r => r.json());
+      const font = config.chineseFont ? fetch(config.chineseFont)
+        .then(async r => r.ok ? new Uint8Array(await r.arrayBuffer()) : new Uint8Array())
+        .catch(e => { console.warn("C0light: Chinese font unavailable", e); return new Uint8Array(); }) : new Uint8Array();
+      const [module, chinese] = await Promise.all([
+        WebAssembly.compileStreaming(fetch("./lightcraft_web_bg.wasm")), font,
+      ]);
+      await init({ module_or_path: module });
+      // Keep the compiled worker module on the existing app namespace.
+      globalThis.lightcraft = { command, module };
+      start(chinese);
+    })().catch(e => {
+      console.error("C0light startup failed", e);
+      const status = document.getElementById("lightcraft_status");
+      status.style.display = "block";
+      status.textContent = "C0light failed to load: " + e;
+    });
+  </script>
+</body>
+</html>

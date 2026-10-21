@@ -47,6 +47,9 @@ fn window_handle(app: &LightcraftApp, ui: &mut egui::Ui, content: Rect, margin_l
 }
 
 pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
+    if !app.c0.chrome.top_bar || !app.c0.chrome.title_bar {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     // room for the traffic lights; in full screen they are gone, and the sidebar button sits as far
     // from the left edge as the Discord button from the right (12 margin + 4)
@@ -187,6 +190,9 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                 ("import", Icon::Plus, import_tip.as_str(), "file.addPhotos"),
                 ("bell", Icon::Bell, "Activity", "panel.activity"),
             ] {
+                if id == "discord" && !app.c0.chrome.community_links {
+                    continue;
+                }
                 let r = Rect::from_center_size(pos2(x, full.center().y), vec2(28.0, 28.0));
                 let resp = ui.interact(r, egui::Id::new(("top", id)), Sense::click()).on_hover_text(crate::i18n::tr(tip));
                 crate::widgets::announce(&resp, crate::i18n::tr(tip));

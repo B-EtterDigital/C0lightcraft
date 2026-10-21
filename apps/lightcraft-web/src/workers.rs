@@ -238,7 +238,10 @@ impl Workers {
             inline_done: 0,
             inline_this_frame: false,
         })));
+        #[cfg(not(feature = "page-control"))]
         let module = get(&js_sys::global(), "lightcraftModule");
+        #[cfg(feature = "page-control")]
+        let module = get(&get(&js_sys::global(), "lightcraft"), "module");
         if module.is_undefined() {
             log::warn!("render workers: no compiled module on the page (window.lightcraftModule); rendering on the main thread");
             return w;
@@ -450,7 +453,7 @@ impl RenderOffload for Workers {
             g.done.push((slot, r, 0.0));
             return None;
         }
-        if g.workers.iter().all(|w| w.dead) {
+        if g.workers.iter().all(|w| w.dead) || (g.backend.is_none() && matches!(&job.origin, lightcraft_engine::catalog::Source::File { .. })) {
             // no workers: render here, one job per frame (as without workers)
             if g.inline_this_frame {
                 return Some(job);

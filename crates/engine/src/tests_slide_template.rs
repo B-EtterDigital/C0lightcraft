@@ -248,6 +248,7 @@ fn bad_files_are_reported_and_skipped() {
     }
     std::fs::create_dir_all(folder.join("folder.json")).unwrap();
     std::fs::write(folder.join("notes.txt"), b"ignored").unwrap();
+    s.slide_templates_cache = None; // Fixtures bypass the app's write-time cache invalidation.
     let r = run(&mut s, "slideshow.templates.list", json!({}));
     let user: Vec<_> = r["templates"].as_array().unwrap().iter().filter(|t| t["builtin"] == false).collect();
     assert_eq!(user.len(), 1, "only the good one: {r}");

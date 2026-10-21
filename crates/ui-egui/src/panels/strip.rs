@@ -15,6 +15,9 @@ const BUTTON_H: f32 = 40.0;
 const GAP: f32 = 6.0;
 
 pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
+    if !app.c0.chrome.tool_strip {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     egui::Panel::right("tool_strip")
         .exact_size(t.strip_w)

@@ -111,6 +111,9 @@ pub fn run(args: &[&str]) -> Result<(), String> {
 
     let mut c = cargo();
     c.args(["build", "-p", "lightcraft-web", "--lib", "--target", TARGET, "--profile", profile]);
+    if args.contains(&"--page-control") {
+        c.args(["--features", "page-control"]);
+    }
     step(c, &format!("cargo build -p lightcraft-web --target {TARGET} --profile {profile}"))?;
 
     let wasm = target_dir.join(TARGET).join(if dev { "debug" } else { profile }).join("lightcraft_web.wasm");

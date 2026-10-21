@@ -19,6 +19,8 @@
 pub mod backup;
 pub mod bench;
 pub mod files;
+#[cfg(feature = "page-control")]
+pub mod page_control;
 pub mod store;
 pub mod wire;
 

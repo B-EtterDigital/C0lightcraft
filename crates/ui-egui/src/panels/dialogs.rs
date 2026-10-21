@@ -1289,28 +1289,7 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
                                 "MIT OR Apache-2.0. Fonts: {} (OFL). Icons: original.",
                                 crate::theme::font_credits(app.chinese_font.is_some())
                             ));
-                            ui.add_space(10.0);
-                            let r = crate::button::Button::new("Join the ArtCraft Discord")
-                                .primary()
-                                .large()
-                                .min_width(260.0)
-                                .widget("button:aboutDiscord")
-                                .tooltip(crate::links::DISCORD)
-                                .show(ui);
-                            if r.clicked() {
-                                let _ = crate::links::open(app, crate::links::DISCORD);
-                            }
-                            ui.add_space(6.0);
-                            for (label, url) in [
-                                ("LightCraft website", crate::links::APP_PAGE),
-                                ("Source code on GitHub", crate::links::GITHUB),
-                                ("ArtCraft — more creative apps", crate::links::WEBSITE),
-                            ] {
-                                let r = ui.link(crate::i18n::tr(label)).on_hover_text(url);
-                                if r.clicked() {
-                                    let _ = crate::links::open(app, url);
-                                }
-                            }
+                            crate::c0_host::about_links(app, ui);
                         }
                     }
                 }
@@ -1653,7 +1632,7 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
         ))
         .color(t.text_label),
     );
-    let r = ui.link(crate::i18n::tr("Read the SAM License")).on_hover_text(LICENSE_URL);
+    let r = crate::c0_host::external_link(app, ui, crate::i18n::tr("Read the SAM License"), LICENSE_URL);
     crate::widgets::register(ui.ctx(), "link:samLicense", r.rect);
     if r.clicked() {
         let _ = crate::links::open(app, LICENSE_URL);
@@ -1692,6 +1671,9 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
                 {
                     app.toast_error(ui.ctx(), e);
                 }
+            }
+            if !app.c0.chrome.community_links {
+                return;
             }
             let r = ui.link(crate::i18n::tr("How to install the model")).on_hover_text(SAM_HELP);
             crate::widgets::register(ui.ctx(), "link:samHelp", r.rect);

@@ -34,6 +34,9 @@ pub fn url_of(cmd: &str) -> Option<&'static str> {
 
 /// Open `url` in the user's browser (through the host's `open_url` service).
 pub fn open(app: &mut crate::LightcraftApp, url: &str) -> Result<serde_json::Value, String> {
+    if !app.c0.chrome.community_links && crate::c0_host::community_url(url) {
+        return Err("community links are hidden".into());
+    }
     let open = app.services.open_url.as_mut().ok_or("can't open links here")?;
     open(url)?;
     Ok(serde_json::json!({ "url": url }))

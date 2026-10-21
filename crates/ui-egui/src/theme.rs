@@ -6,6 +6,7 @@
 //! - light: **Silver** (light grey chrome) and **Paper** (near white).
 
 use std::sync::Arc;
+pub mod host;
 
 use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, Visuals};
 
@@ -405,7 +406,7 @@ pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
         o.input_options.line_scroll_speed = WHEEL_LINE_POINTS;
         o.input_options.scroll_zoom_speed = WHEEL_ZOOM_PER_POINT;
     });
-    let t = Tokens::for_kind(kind);
+    let t = host::resolve(ctx, Tokens::for_kind(kind));
     ctx.data_mut(|d| {
         d.insert_temp(egui::Id::NULL, t);
         d.insert_temp(theme_id(), kind);

@@ -20,6 +20,9 @@ const VIEW_MODES: &[(&str, Icon, ViewMode, &str)] = &[
 ];
 
 pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
+    if !app.c0.chrome.bottom_bar {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     egui::Panel::bottom("bottom_bar")
         .exact_size(t.bottom_bar_h)

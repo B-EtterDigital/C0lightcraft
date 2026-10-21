@@ -221,7 +221,7 @@ fn profile_url(c: &Contributor) -> String {
 
 /// A contributor's name as a link to their GitHub profile, with the whole line as its tooltip.
 fn name_link(app: &mut LightcraftApp, ui: &mut egui::Ui, c: &Contributor, names: NameMode) {
-    if ui.link(c.name(names)).on_hover_text(c.summary()).clicked() {
+    if crate::c0_host::contributor_link(app, ui, &c.name(names)).on_hover_text(c.summary()).clicked() {
         let _ = crate::links::open(app, &profile_url(c));
     }
 }

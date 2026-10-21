@@ -2126,6 +2126,9 @@ fn thumb_size_view(app: &LightcraftApp) -> bool {
 }
 
 pub fn ui_enabled(app: &LightcraftApp, id: &str) -> bool {
+    if !app.c0.chrome.community_links && crate::links::url_of(id).is_some() {
+        return false;
+    }
     match id {
         "library.selectOnlyActive" => app.session.active().is_some(),
         "view.thumbSizeUp" | "view.thumbSizeDown" => thumb_size_view(app),
@@ -2194,6 +2197,7 @@ pub struct MenuEntry {
 /// The flattened menu model (UI commands + engine commands with menu paths).
 pub fn menu_entries(app: &LightcraftApp) -> Vec<MenuEntry> {
     let mut v: Vec<MenuEntry> = ui_commands()
+        .filter(|c| app.c0.chrome.community_links || crate::links::url_of(c.0).is_none())
         .filter(|c| !c.3.is_empty())
         .map(|(id, label, sc, m)| MenuEntry {
             id: id.to_string(),

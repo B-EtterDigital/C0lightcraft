@@ -23,7 +23,7 @@ use crate::store::{Originals, content_hash, download_name, storage_key};
 use crate::wire::ThumbIndex;
 use crate::workers::{THUMB_INDEX, Workers};
 
-const ACCEPT: &str = ".jpg,.jpeg,.png,.tif,.tiff,.webp,.dng,.cr2,.nef,.arw,.psd,.jxl,.gif,.bmp";
+pub(crate) const ACCEPT: &str = ".jpg,.jpeg,.png,.tif,.tiff,.webp,.dng,.cr2,.cr3,.nef,.arw,.raf,.rw2,.orf,.pef,.rwl,.heic,.psd,.jxl,.gif,.bmp";
 
 /// After a failed save, wait this long before trying again (ms).
 const SAVE_RETRY_MS: f64 = 2000.0;
@@ -401,7 +401,7 @@ impl WebApp {
             on_disk: false,
         };
         let mut problem = None;
-        match session.open_library_in(stores, true).cloned() {
+        match session.open_library_in(stores, !cfg!(feature = "page-control")).cloned() {
             Ok(r) => log::info!(
                 "lightcraft: library {} in {:.0} ms ({} photos; snapshot seq {}, {} ops replayed)",
                 if r.created { "created" } else { "loaded" },
@@ -424,13 +424,14 @@ impl WebApp {
                 });
             }
         }
-        if backend.is_some() {
+        if backend.is_some() && lightcraft_ui_egui::c0_host::Chrome::for_page(cfg!(feature = "page-control")).experimental_notice {
             notice(
                 "LightCraft in the browser is experimental. Your library is kept in this browser's storage: keep your original photos \
                  elsewhere and back up with File ▸ Back Up Library….",
             );
         }
         // previews are large (≤ 2560 px, f32): keep few in a 32-bit address space
+        session.clock = Box::new(|| lightcraft_engine::import::civil((js_sys::Date::now() / 1000.0) as i64));
         session.media.preview_capacity = 3;
         let frozen = Rc::new(Cell::new(false));
         let mut app = LightcraftApp::new(session, services(originals.clone(), backend.clone(), files.clone(), frozen.clone(), cc.egui_ctx.clone()))
@@ -440,6 +441,8 @@ impl WebApp {
             app.ui = ui;
         }
         app.ui = app.ui.sanitized();
+        #[cfg(feature = "page-control")]
+        crate::page_control::attach(&mut app, &cc.egui_ctx, originals.clone(), backend.clone(), files.clone());
         app.library_problem = problem;
         let n = opts.workers.unwrap_or_else(|| {
             let cores = window().map_or(1, |w| w.navigator().hardware_concurrency() as usize);
@@ -613,6 +616,10 @@ impl WebApp {
     fn run_inbox(&mut self) {
         let inbox = INBOX.with(|q| std::mem::take(&mut *q.borrow_mut()));
         for (id, params, (resolve, reject)) in inbox {
+            #[cfg(feature = "page-control")]
+            if crate::page_control::run(&mut self.app, &id, &params, &resolve) {
+                continue;
+            }
             let params: serde_json::Value = serde_json::from_str(&params).unwrap_or(json!({}));
             let r = if id == "web.stats" { Ok(self.web_stats()) } else { self.app.run(&id, params) };
             let _ = match r {
@@ -696,6 +703,8 @@ pub fn start(chinese_font: Vec<u8>) {
         };
         let boot = boot(opts).await;
         let runner = eframe::WebRunner::new();
+        #[cfg(feature = "page-control")]
+        crate::page_control::runner(&runner);
         let r = runner.start(canvas, eframe::WebOptions::default(), Box::new(move |cc| Ok(Box::new(WebApp::new(cc, boot, chinese_font))))).await;
         match r {
             Ok(()) => {

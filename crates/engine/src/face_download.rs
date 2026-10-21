@@ -181,7 +181,7 @@ impl Drop for Downloads {
         for job in self.jobs.values() {
             job.cancel.store(true, Ordering::Relaxed);
         }
-        let started = std::time::Instant::now();
+        let started = web_time::Instant::now();
         while self.running() && started.elapsed() < Duration::from_secs(1) {
             std::thread::sleep(Duration::from_millis(10));
         }
