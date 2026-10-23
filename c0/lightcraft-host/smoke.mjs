@@ -88,6 +88,13 @@ try {
       const settings=await call('c0.set',{themeTokens:{chrome:'#102030',accent:'#cf6828',invalidToken:'#ffffff',text:'bad'},panels:{top_bar:true,community_links:false,filmstrip:false,unknown:false,histogram:'bad'}});
       check(settings.unknown.includes('themeTokens.invalidToken') && settings.unknown.includes('panels.unknown'),'unknown settings');
       check(settings.invalid.includes('themeTokens.text') && settings.invalid.includes('panels.histogram'),'invalid settings');
+      for (const mode of [{toolbar_double:true},{toolbar_floating:true},{toolbar_double:false},{toolbar_floating:false},{right_dock_collapsed:true},{right_dock_collapsed:false}]) {
+        const [key,value]=Object.entries(mode)[0];
+        const r=await call('c0.set',{panels:mode});
+        check(r.applied.includes(`panels.${key}`) && r.unknown.length===0,`mode ${key} not applied`);
+        check((await call('c0.inspect')).panes[key]===value,`mode ${key} not read back`);
+      }
+      const modeless=await call('c0.set',{panels:{toolbar_triple:true}}); check(modeless.unknown.includes('panels.toolbar_triple'),'unknown mode key');
       await call('c0.cancelFileDialog');
       const bad=JSON.parse(await window.__c0hostRequest('{broken')); check(bad.ok===false,'bad JSON accepted');
       const hostile=JSON.parse(await window.__c0hostRequest(JSON.stringify({method:'ui.click',params:{x:0,y:0,count:Number.MAX_SAFE_INTEGER}})));

@@ -20,7 +20,6 @@ const MARGIN: f32 = 8.0;
 pub struct Modes {
     pub double: bool,
     pub floating: bool,
-    drawing_palette: bool,
     /// The panel to bring back when the right dock unfolds; `Some` while folded.
     folded: Option<RightPanel>,
 }
@@ -87,11 +86,18 @@ pub(crate) fn separator(ui: &mut egui::Ui, strip_w: f32, color: egui::Color32) {
     ui.painter().rect_filled(r, 0.0, color.gamma_multiply(0.7));
 }
 
+/// The tool strip as the frame draws it: off, docked, or floating.
+pub(crate) fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
+    if app.c0.chrome.tool_strip && !float(app, ui) {
+        crate::panels::strip::show(app, ui);
+    }
+}
+
 /// Draw the strip as a movable palette over the canvas. Returns whether it did, so the docked
 /// panel is skipped and the canvas keeps the full width.
 pub(crate) fn float(app: &mut LightcraftApp, ui: &mut egui::Ui) -> bool {
     reconcile(app);
-    if !app.c0.modes.floating || app.c0.modes.drawing_palette {
+    if !app.c0.modes.floating {
         return false;
     }
     let ctx = ui.ctx().clone();
@@ -103,7 +109,6 @@ pub(crate) fn float(app: &mut LightcraftApp, ui: &mut egui::Ui) -> bool {
     // beside the open right dock, not over it
     let dock = if app.ui.right == RightPanel::None { 0.0 } else { app.ui.right_width };
     let start = pos2((area.right() - width - dock - MARGIN).max(area.left()), area.top() + MARGIN);
-    app.c0.modes.drawing_palette = true;
     egui::Area::new(Id::new("c0-tool-palette")).order(Order::Middle).default_pos(start).constrain_to(area).movable(true).show(&ctx, |ui| {
         let (grip, _) = ui.allocate_exact_size(vec2(width, GRIP_H), Sense::hover());
         ui.painter().rect_filled(grip, 0.0, t.chrome);
@@ -112,6 +117,5 @@ pub(crate) fn float(app: &mut LightcraftApp, ui: &mut egui::Ui) -> bool {
         let mut child = ui.new_child(UiBuilder::new().max_rect(rect));
         crate::panels::strip::show(app, &mut child);
     });
-    app.c0.modes.drawing_palette = false;
     true
 }

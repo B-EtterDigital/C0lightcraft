@@ -110,7 +110,8 @@ capture the canvas/page through the browser instead.
   "importing": false, "exporting": false, "unsaved": null,
   "theme": "charcoal", "fileDialog": false,
   "panes": {"title_bar":false,"top_bar":false,"start_screen":false,
-    "community_links":false,"experimental_notice":false,"tool_strip":true,
+    "community_links":false,"experimental_notice":false,"tool_strip":true,"toolbar":true,"toolbar_double":false,
+    "toolbar_floating":false,"right_dock_collapsed":false,
     "bottom_bar":true,"left_panel":true,"filmstrip":true,"histogram":true,
     "filter_bar":true,"navigator":true}
 }
@@ -185,7 +186,24 @@ Host setters treat `title_bar` and `top_bar` as aliases for the same in-window
 bar and synchronize both switches; send one of these keys per request. The notice switch controls the
 startup notice, not storage-error notices. Existing UiState panel switches are
 also supported: `left_panel`, `filmstrip`, `histogram`, `filter_bar`, `navigator`.
-Values must be booleans. Community-off hides Help-menu project links, the
+Values must be booleans.
+
+### Tool modes and the right dock
+
+The tool strip (the icon column beside the develop panels) has the same modes as PhotoCraft's
+toolbar, set through the same `panels` map and reported in `c0.inspect().panes`:
+
+| Key | Meaning |
+|---|---|
+| `toolbar` | Alias of `tool_strip` |
+| `toolbar_double` | The strip in two columns (docked 2 × 48 pt, or in the palette) |
+| `toolbar_floating` | The strip as a movable palette over the canvas (drag its grip); the canvas takes the full width. With `toolbar_double` it has two columns |
+| `right_dock_collapsed` | Folds the right dock (Edit, Crop, … panels) to the tool strip, whose icons still open it; `false` brings back the panel that was open (Edit if none) |
+
+None of these is saved; all default to `false` (upstream layout). Folding closes the dock as the
+panel's own close does; opening any panel (icon, shortcut, command) ends the fold. With the
+strip hidden (`tool_strip:false`) a folded dock has no icons: use `panel.*` commands.
+Community-off hides Help-menu project links, the
 Discord icon, About promotions, model-guide links and contributor profile links; direct project
 link commands are refused. About still identifies LightCraft, the licence,
 fonts, original icons and named contributors. The host can access all hidden

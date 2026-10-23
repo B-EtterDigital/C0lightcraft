@@ -21,20 +21,20 @@ Before committing, omit `c0/main` to measure the working tree instead.
 | `crates/ui-egui/Cargo.toml` | 1 | Pure-Rust base64 dependency | Bounded standard base64 file transport | No |
 | `crates/ui-egui/src/control.rs` | 1 | One c0. prefix arm | Reuse the app's control handler | No |
 | `crates/ui-egui/src/credits.rs` | 1 | Policy-aware contributor label/link | Keep names while removing GitHub profile links | No |
-| `crates/ui-egui/src/lib.rs` | 3 | Module, per-app host state and default construction | Unsaved host policy; upstream defaults intact | No |
+| `crates/ui-egui/src/lib.rs` | 4 | Module, per-app host state and default construction (3); frame calls the host tool-strip wrapper (1) | Unsaved host policy; strip modes; upstream defaults intact | No |
 | `crates/ui-egui/src/links.rs` | 3 | Guard community URLs | Prevent hidden promotions from being opened by command | No |
 | `crates/ui-egui/src/menus.rs` | 4 | Disable and omit community entries | Menu/list consistency | No |
 | `crates/ui-egui/src/panels/bottombar.rs` | 3 | Default-true chrome guard | Optional host-owned bottom bar | No |
 | `crates/ui-egui/src/panels/dialogs.rs` | 5 | About helper (1); guard model guide (3); plain licence label when links hidden (1) | Cover every community/GitHub link; preserve licence text and upstream defaults | No |
 | `crates/ui-egui/src/panels/empty_library.rs` | 3 | Default-true Start/Home guard | The host owns the guest empty screen | No |
-| `crates/ui-egui/src/panels/strip.rs` | 3 | Default-true tool-strip guard | Optional host chrome | No |
+| `crates/ui-egui/src/panels/strip.rs` | 4 | Panel width times column count (1); the two button groups and the group rule go through the host layout helpers (3). The tool-strip guard moved to `c0_strip::show` | Tool modes: two columns; floating reuses the same drawing | No |
 | `crates/ui-egui/src/panels/topbar.rs` | 6 | Title/top guard and Discord guard | Host title bar; optional promotions | No |
 | `crates/ui-egui/src/theme.rs` | 2 | New host module and one token-resolution replacement | Apply overrides to tokens and egui visuals across theme changes | No |
 | `xtask/src/web.rs` | 3 | Forward --page-control as the app's feature | Build using the upstream bundler rather than inventing a second pipeline | No |
 
-Total: 67 added lines in 20 modified upstream files.
+Total: 69 added lines in 20 modified upstream files.
 
-Ratchet: 67
+Ratchet: 69
 
 ## Seams checked during porting
 
