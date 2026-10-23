@@ -6,12 +6,15 @@ pub(super) fn inspect(app: &LightcraftApp) -> Value {
     json!({"title_bar":c.title_bar,"top_bar":c.top_bar,"start_screen":c.start_screen,
         "community_links":c.community_links,"experimental_notice":c.experimental_notice,
         "tool_strip":c.tool_strip,"bottom_bar":c.bottom_bar,
+        "toolbar":c.tool_strip,"toolbar_double":app.c0.modes.double,"toolbar_floating":app.c0.modes.floating,
+        "right_dock_collapsed":super::c0_strip::collapsed(app),
         "left_panel":app.ui.left_panel,"filmstrip":app.ui.filmstrip,"histogram":app.ui.histogram,
         "filter_bar":app.ui.filter_bar,"navigator":app.ui.navigator})
 }
 
 pub(super) fn set(app: &mut LightcraftApp, ctx: &egui::Context, p: &Value) -> Result<Value, String> {
     let mut report = json!({"applied":[],"unknown":[],"invalid":[]});
+    super::c0_strip::reconcile(app);
     if let Some(tokens) = p.get("themeTokens") {
         crate::theme::host::set(ctx, tokens, &mut report);
     }
@@ -29,11 +32,23 @@ pub(super) fn set(app: &mut LightcraftApp, ctx: &egui::Context, p: &Value) -> Re
                     }
                     continue;
                 }
+                if key == "right_dock_collapsed" {
+                    let field = format!("panels.{key}");
+                    if let Some(on) = value.as_bool() {
+                        super::c0_strip::set_collapsed(app, on);
+                        record(&mut report, "applied", field);
+                    } else {
+                        record(&mut report, "invalid", field);
+                    }
+                    continue;
+                }
                 let slot = match key.as_str() {
+                    "toolbar_double" => Some(&mut app.c0.modes.double),
+                    "toolbar_floating" => Some(&mut app.c0.modes.floating),
                     "start_screen" => Some(&mut app.c0.chrome.start_screen),
                     "community_links" => Some(&mut app.c0.chrome.community_links),
                     "experimental_notice" => Some(&mut app.c0.chrome.experimental_notice),
-                    "tool_strip" => Some(&mut app.c0.chrome.tool_strip),
+                    "tool_strip" | "toolbar" => Some(&mut app.c0.chrome.tool_strip),
                     "bottom_bar" => Some(&mut app.c0.chrome.bottom_bar),
                     "left_panel" => Some(&mut app.ui.left_panel),
                     "filmstrip" => Some(&mut app.ui.filmstrip),

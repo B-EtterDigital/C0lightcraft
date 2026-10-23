@@ -3,9 +3,11 @@
 mod c0_chrome;
 mod c0_files;
 pub(crate) mod c0_panels;
+pub(crate) mod c0_strip;
 
 pub use c0_chrome::{Chrome, about_links, community_url, contributor_link, external_link};
 pub use c0_files::{MAX_FILE_BYTES, MAX_REQUEST_BYTES, decode_file, encode_bytes};
+pub use c0_strip::Modes;
 
 use lightcraft_catalog::{AlbumId, PhotoId};
 use serde_json::{Value, json};
@@ -15,6 +17,7 @@ use crate::{LightcraftApp, control::Outcome};
 #[derive(Default)]
 pub struct Host {
     pub chrome: Chrome,
+    pub modes: Modes,
     pub picker_pending: Option<Box<dyn Fn() -> bool>>,
     pub cancel_picker: Option<Box<dyn FnMut() -> bool>>,
     pub store_file: Option<Box<dyn FnMut(&str, Vec<u8>) -> Result<String, String>>>,

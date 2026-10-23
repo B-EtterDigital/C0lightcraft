@@ -15,12 +15,12 @@ const BUTTON_H: f32 = 40.0;
 const GAP: f32 = 6.0;
 
 pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
-    if !app.c0.chrome.tool_strip {
+    if !app.c0.chrome.tool_strip || crate::c0_host::c0_strip::float(app, ui) {
         return;
     }
     let t = Tokens::get(ui.ctx());
     egui::Panel::right("tool_strip")
-        .exact_size(t.strip_w)
+        .exact_size(t.strip_w * app.c0.modes.cols())
         .resizable(false)
         .frame(
             egui::Frame::NONE
@@ -30,7 +30,7 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         )
         .show(ui, |ui| {
             let has_photo = app.session.active().is_some();
-            ui.vertical_centered(|ui| {
+            crate::c0_host::c0_strip::flow(ui, app.c0.modes.cols(), false, |ui| {
                 ui.spacing_mut().item_spacing.y = GAP;
                 let sz = vec2(t.strip_w, BUTTON_H);
                 if icon_button(ui, "presets", Icon::Presets, sz, app.ui.presets, has_photo, "Presets (Shift+P)").clicked() {
@@ -70,7 +70,7 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                     egui::pos2(ui.max_rect().left(), bottom - (2.0 * BUTTON_H + GAP)),
                     ui.max_rect().right_bottom(),
                 )));
-            child.vertical_centered(|ui| {
+            crate::c0_host::c0_strip::flow(&mut child, app.c0.modes.cols(), true, |ui| {
                 ui.spacing_mut().item_spacing.y = GAP;
                 let sz = vec2(t.strip_w, BUTTON_H);
                 if icon_button(ui, "keywords", Icon::Tag, sz, app.ui.right == RightPanel::Keywords, has_photo, "Keywords (K)").clicked() {
@@ -84,8 +84,7 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
 }
 
 fn separator(ui: &mut egui::Ui, t: &Tokens) {
-    let (r, _) = ui.allocate_exact_size(vec2(t.strip_w - 16.0, 1.0), egui::Sense::hover());
-    ui.painter().rect_filled(r, 0.0, t.button_border.gamma_multiply(0.7));
+    crate::c0_host::c0_strip::separator(ui, t.strip_w, t.button_border);
 }
 
 #[cfg(test)]
