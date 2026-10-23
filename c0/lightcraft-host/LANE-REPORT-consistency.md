@@ -51,8 +51,7 @@ All Cargo runs under `smoac-slot run heavy 2`, `CARGO_BUILD_JOBS=2`.
 
 ## wasm size
 
-`lightcraft_web_bg.wasm` 24,559,718 bytes (24.6 MB, optimized; 8.74 MB gzip-class sibling 8,743,809, 5,779,024
-the third compressed sibling in the bundler's table). I found no pin cap in the repo (`omastore.toml`,
+`lightcraft_web_bg.wasm` 24,559,718 bytes (24.6 MB, optimized; compressed siblings 8,743,809 and 5,779,024 bytes). I found no pin cap in the repo (`omastore.toml`,
 `c0/`, `docs/web.md`, `xtask`), and the first lane did not record a size, so I cannot state margin.
 
 ## Machine load
