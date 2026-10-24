@@ -14,10 +14,8 @@ Before committing, omit `c0/main` to measure the working tree instead.
 | `Cargo.lock` | 7 | Pin base64 0.22.1 and add the UI dependency edge | Reproducible pure-Rust file transport | No |
 | `apps/lightcraft-web/Cargo.toml` | 2 | Optional page-control feature; serde_json borrowed raw params | Native K-41 and bounded large file envelopes | No, host transport |
 | `apps/lightcraft-web/src/lib.rs` | 2 | Feature-gated page_control module | Keep ordinary web build unchanged | No |
-| `apps/lightcraft-web/src/web.rs` | 12 | Picker accept-list correction (1); real browser import clock (1); feature-controlled demo/notice, attach, queue dispatch and runner hooks (10) | Correct web bugs; wrap the existing browser INBOX and avoid hosted demos | Picker extension and clock fixes: **yes, as is**; host hooks: no |
+| `apps/lightcraft-web/src/web.rs` | 11 | Real browser import clock (1); feature-controlled demo/notice, attach, queue dispatch and runner hooks (10) | Correct web bugs; wrap the existing browser INBOX and avoid hosted demos | Picker extension and clock fixes: **yes, as is**; host hooks: no |
 | `apps/lightcraft-web/src/workers.rs` | 4 | Feature-selected compiled-module location (3); memory-only File rendering fallback (1) | Self-contained module; workers cannot read originals without storage | Fallback: **yes, as is**; module hook: no |
-| `crates/engine/src/tests_slide_template.rs` | 1 | Invalidate listing after external fixture writes | Avoid same-clock-tick directory-mtime flake; production unchanged | **Yes, as is** |
-| `crates/engine/src/face_download.rs` | 1 | Use web_time in the download manager destructor | Dropping any session panicked on wasm, even without a download | **Yes, as is** |
 | `crates/ui-egui/Cargo.toml` | 1 | Pure-Rust base64 dependency | Bounded standard base64 file transport | No |
 | `crates/ui-egui/src/control.rs` | 1 | One c0. prefix arm | Reuse the app's control handler | No |
 | `crates/ui-egui/src/credits.rs` | 1 | Policy-aware contributor label/link | Keep names while removing GitHub profile links | No |
@@ -32,9 +30,9 @@ Before committing, omit `c0/main` to measure the working tree instead.
 | `crates/ui-egui/src/theme.rs` | 2 | New host module and one token-resolution replacement | Apply overrides to tokens and egui visuals across theme changes | No |
 | `xtask/src/web.rs` | 3 | Forward --page-control as the app's feature | Build using the upstream bundler rather than inventing a second pipeline | No |
 
-Total: 69 added lines in 20 modified upstream files.
+Total: 66 added lines in 18 modified upstream files.
 
-Ratchet: 69
+Ratchet: 66
 
 ## Seams checked during porting
 

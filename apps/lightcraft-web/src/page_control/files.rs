@@ -70,7 +70,7 @@ fn open(generation: Rc<Cell<u64>>, pending: Rc<Cell<bool>>, active: Active, ctx:
         .map_err(|_| "not an input")?;
     input.set_type("file");
     input.set_multiple(true);
-    input.set_accept(crate::web::ACCEPT);
+    input.set_accept(&lightcraft_engine::import::accept_list());
     let ticket = generation.get().wrapping_add(1);
     generation.set(ticket);
     pending.set(true);
