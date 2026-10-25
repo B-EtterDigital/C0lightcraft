@@ -16,6 +16,7 @@ lightcraft-geom = { workspace = true }
 lightcraft-meta = { workspace = true }
 lightcraft-color = { workspace = true }
 lightcraft-raster = { workspace = true }
+lightcraft-codecs = { workspace = true }
 lightcraft-develop = { workspace = true }
 lightcraft-pipeline = { workspace = true }
 lightcraft-catalog = { workspace = true }
@@ -33,7 +34,6 @@ log = { workspace = true }
 lightcraft-testkit = { workspace = true }
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
 lightcraft-denoise = { workspace = true, features = ["runtime"] }
-lightcraft-codecs = { workspace = true }
 lightcraft-faces = { workspace = true }
 lightcraft-merge = { workspace = true }
 

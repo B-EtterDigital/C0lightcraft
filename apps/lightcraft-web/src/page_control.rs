@@ -38,6 +38,17 @@ struct LargeFile {
     bytes: String,
 }
 
+/// A `c0.place` request past the ordinary size limit: only a picture, a name and the placement fields.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LargePlace {
+    png: Option<String>,
+    jpeg: Option<String>,
+    name: Option<String>,
+    mode: Option<String>,
+    source: Option<u64>,
+}
+
 pub fn parse(text: &str) -> Result<(String, Value), String> {
     if text.len() > lightcraft_ui_egui::c0_host::MAX_REQUEST_BYTES {
         return Err("request exceeds the host request limit".into());
@@ -48,11 +59,14 @@ pub fn parse(text: &str) -> Result<(String, Value), String> {
     if method.is_empty() {
         return Err("request has no method".into());
     }
-    if method != "c0.openFile" && text.len() > MAX_REQUEST_BYTES {
+    if !matches!(method, "c0.openFile" | "c0.place") && text.len() > MAX_REQUEST_BYTES {
         return Err("request is larger than 1 MiB".into());
     }
     let raw = envelope.params.map_or("{}", |p| p.get());
-    let params: Value = if text.len() > MAX_REQUEST_BYTES {
+    let params: Value = if text.len() > MAX_REQUEST_BYTES && method == "c0.place" {
+        let f: LargePlace = serde_json::from_str(raw).map_err(|e| format!("invalid place request: {e}"))?;
+        json!({"png":f.png,"jpeg":f.jpeg,"name":f.name,"mode":f.mode,"source":f.source})
+    } else if text.len() > MAX_REQUEST_BYTES {
         let file: LargeFile = serde_json::from_str(raw).map_err(|e| format!("invalid file request: {e}"))?;
         json!({"name":file.name,"bytes":file.bytes})
     } else {
@@ -100,7 +114,7 @@ fn validate_coordinates(p: &Value) -> Result<(), String> {
 }
 
 pub fn reads_only(method: &str) -> bool {
-    matches!(method, "c0.inspect" | "c0.documentBytes" | "ui.inspect" | "ui.widgets" | "ui.menu.list" | "ui.menu.tree" | "engine.commands")
+    matches!(method, "c0.inspect" | "c0.documentBytes" | "c0.selection" | "ui.inspect" | "ui.widgets" | "ui.menu.list" | "ui.menu.tree" | "engine.commands")
 }
 
 pub fn inline_passes(method: &str) -> usize {

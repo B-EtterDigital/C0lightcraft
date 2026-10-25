@@ -97,6 +97,8 @@ capture the canvas/page through the browser instead.
 | `c0.openFile` | `{name,bytes}` | Engine import report `{imported,duplicates,failed,scanned,...}` |
 | `c0.newDocument` | `{template?: "blank"}` | `{photoCount:0,template:"blank"}`; empty/omitted template also means blank |
 | `c0.cancelFileDialog` | `{}` | `{cancelled:boolean}` |
+| `c0.selection` | `{photo?: id}` | `{kind:"photo",photoId,name,width,height,sourceWidth,sourceHeight,png,mask?}`; `png` is base64 of the photo as developed, long side at most 2048; `mask` is base64 of the active local mask (white on black, same size); error unless a photo is open in Develop |
+| `c0.place` | `{png\|jpeg: base64, mode:"new-version", name?, source?: id}` | `{placed:"photo",mode,photoId,name,stackedWith,bytes}`; imports the picture as a new photo stacked next to the source (default: the active photo), original untouched, one undo step; pictures over 40 MB, bad base64, unknown modes and unreadable images answer an error |
 | `c0.set` | `{themeTokens?,panels?}` | `{applied:string[],unknown:string[],invalid:string[]}` |
 
 `c0.inspect` returns these fields (illustrative photo/collection):

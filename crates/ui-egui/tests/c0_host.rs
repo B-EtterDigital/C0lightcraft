@@ -400,3 +400,162 @@ fn byte_import_cannot_leave_an_ephemeral_original_in_a_disk_library() {
     assert_eq!(open(&mut app, &ctx)["ok"], true);
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+// ---------- c0.selection and c0.place (the AI actions) ----------
+
+fn solid_png(w: usize, h: usize) -> Vec<u8> {
+    let image = lightcraft_raster::Rgba8::from_bytes(w, h, &[200, 120, 40, 255].repeat(w * h)).unwrap();
+    lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&image), &Default::default()).unwrap()
+}
+
+fn open_in_develop(app: &mut LightcraftApp, ctx: &egui::Context) -> u64 {
+    assert_eq!(open(app, ctx)["ok"], true);
+    let id = app.session.catalog.photos().next().unwrap().id.0;
+    assert_eq!(request(app, ctx, "c0.goTo", json!({"photo":id,"view":"detail"}))["ok"], true);
+    id
+}
+
+fn decode_png(text: &str) -> (u32, u32, Vec<u8>) {
+    let bytes = STANDARD.decode(text).unwrap();
+    assert_eq!(&bytes[1..4], b"PNG");
+    let img = lightcraft_codecs::decode(&bytes, Default::default()).unwrap();
+    (img.image.width as u32, img.image.height as u32, bytes)
+}
+
+#[test]
+fn selection_needs_a_photo_open_in_develop() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    assert_eq!(request(&mut app, &ctx, "c0.selection", json!({}))["ok"], false);
+    assert_eq!(open(&mut app, &ctx)["ok"], true);
+    let id = app.session.catalog.photos().next().unwrap().id.0;
+    request(&mut app, &ctx, "c0.goTo", json!({"photo":id,"view":"grid"}));
+    let reply = request(&mut app, &ctx, "c0.selection", json!({}));
+    assert_eq!(reply["ok"], false, "{reply}");
+    assert!(reply["error"].as_str().unwrap().contains("Develop"));
+    request(&mut app, &ctx, "c0.goTo", json!({"photo":id,"view":"detail"}));
+    assert_eq!(request(&mut app, &ctx, "c0.selection", json!({"photo":id + 99}))["ok"], false);
+    assert_eq!(request(&mut app, &ctx, "c0.selection", json!({"photo":"x"}))["ok"], false);
+}
+
+#[test]
+fn selection_reads_the_developed_photo_and_the_active_mask() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    let id = open_in_develop(&mut app, &ctx);
+    let before = request(&mut app, &ctx, "c0.inspect", json!({}));
+    let reply = request(&mut app, &ctx, "c0.selection", json!({}));
+    assert_eq!(reply["ok"], true, "{reply}");
+    let r = &reply["result"];
+    assert_eq!((r["kind"].as_str(), r["photoId"].as_u64(), r["name"].as_str()), (Some("photo"), Some(id), Some("original.png")));
+    let (w, h, _) = decode_png(r["png"].as_str().unwrap());
+    assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(w as u64), Some(h as u64)));
+    assert!(r.get("mask").is_none(), "no mask is selected");
+    // the picture is the photo as developed: an exposure change shows in it
+    app.run("develop.set", json!({"control":"light.exposure","value":1.5})).unwrap();
+    let edited = request(&mut app, &ctx, "c0.selection", json!({}));
+    assert_ne!(edited["result"]["png"], r["png"]);
+    // an active mask comes along as a PNG of the same size
+    app.run("mask.add", json!({"kind":"radial"})).unwrap();
+    let masked = request(&mut app, &ctx, "c0.selection", json!({}));
+    let mask = masked["result"]["mask"].as_str().expect("mask png");
+    let (mw, mh, _) = decode_png(mask);
+    assert_eq!((mw, mh), (w, h));
+    let state = request(&mut app, &ctx, "c0.inspect", json!({}));
+    assert_eq!(state["result"]["photoCount"], before["result"]["photoCount"], "reading changes nothing");
+}
+
+#[test]
+fn selection_picture_is_at_most_2048_on_the_long_side() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    let name = "wide.png";
+    let reply = request(&mut app, &ctx, "c0.openFile", json!({"name":name,"bytes":STANDARD.encode(solid_png(3000, 40))}));
+    assert_eq!(reply["ok"], true, "{reply}");
+    let id = app.session.catalog.photos().next().unwrap().id.0;
+    request(&mut app, &ctx, "c0.goTo", json!({"photo":id,"view":"detail"}));
+    let r = request(&mut app, &ctx, "c0.selection", json!({}));
+    assert_eq!(r["ok"], true, "{r}");
+    let (w, h, _) = decode_png(r["result"]["png"].as_str().unwrap());
+    assert!(w.max(h) <= 2048 && w > h, "{w}x{h}");
+    assert_eq!(r["result"]["sourceWidth"], 3000);
+}
+
+#[test]
+fn place_adds_a_new_version_stacked_next_to_the_source_as_one_undo_step() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    let id = open_in_develop(&mut app, &ctx);
+    let original = app.session.catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().source.clone();
+    let steps = app.session.undo.len();
+    for (key, name, data) in [("png", "ai.png", solid_png(4, 3))] {
+        let reply = request(&mut app, &ctx, "c0.place", json!({key: STANDARD.encode(data), "name": name, "mode": "new-version"}));
+        assert_eq!(reply["ok"], true, "{reply}");
+        let r = &reply["result"];
+        let new = r["photoId"].as_u64().unwrap();
+        assert_ne!(new, id);
+        assert_eq!((r["placed"].as_str(), r["stackedWith"].as_u64()), (Some("photo"), Some(id)));
+        let catalog = &app.session.catalog;
+        assert_eq!(catalog.photos().filter(|p| p.in_library()).count(), 2);
+        let stack = catalog.stack_of(lightcraft_catalog::PhotoId(id)).expect("stacked with the source");
+        assert!(stack.photos.iter().any(|p| p.0 == new));
+        assert_eq!(catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().source, original, "the original file is untouched");
+        assert_eq!(app.session.undo.len(), steps + 1, "one undo step");
+        // one Ctrl+Z removes the picture and the stack
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(app.session.catalog.photos().filter(|p| p.in_library()).count(), 1);
+        assert!(app.session.catalog.stack_of(lightcraft_catalog::PhotoId(id)).is_none());
+        assert_eq!(app.session.undo.len(), steps);
+    }
+}
+
+#[test]
+fn place_takes_a_jpeg_and_marks_the_document_changed() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    let id = open_in_develop(&mut app, &ctx);
+    let image = lightcraft_raster::Rgba8::from_bytes(8, 8, &[10, 200, 90, 255].repeat(64)).unwrap();
+    let jpeg = lightcraft_codecs::encode_jpeg(&lightcraft_codecs::EncodeImage::rgba8(&image), 90, Default::default(), &Default::default()).unwrap();
+    let reply = request(&mut app, &ctx, "c0.place", json!({"jpeg": STANDARD.encode(jpeg), "mode": "new-version", "source": id}));
+    assert_eq!(reply["ok"], true, "{reply}");
+    assert_eq!(reply["result"]["name"], "ai-result.jpg");
+    let state = request(&mut app, &ctx, "c0.inspect", json!({}));
+    assert_eq!(state["result"]["photoCount"], 2);
+    assert_eq!(state["result"]["canUndo"], true);
+}
+
+#[test]
+fn place_with_bad_params_answers_a_plain_error_and_changes_nothing() {
+    let mut app = make_app();
+    let ctx = egui::Context::default();
+    let id = open_in_develop(&mut app, &ctx);
+    let good = STANDARD.encode(solid_png(4, 3));
+    let steps = app.session.undo.len();
+    for params in [
+        json!({}),
+        json!({"png": good, "mode": "replace"}),
+        json!({"png": good}),
+        json!({"mode": "new-version"}),
+        json!({"png": good, "jpeg": good, "mode": "new-version"}),
+        json!({"png": 5, "mode": "new-version"}),
+        json!({"png": "!!!not base64", "mode": "new-version"}),
+        json!({"png": STANDARD.encode(b"not a picture"), "mode": "new-version"}),
+        json!({"png": good, "mode": "new-version", "name": "../x.png"}),
+        json!({"png": good, "mode": "new-version", "name": 7}),
+        json!({"png": good, "mode": "new-version", "source": 424242}),
+        json!({"png": "A".repeat(60 * 1024 * 1024), "mode": "new-version"}),
+    ] {
+        let reply = request(&mut app, &ctx, "c0.place", params);
+        assert_eq!(reply["ok"], false, "{reply}");
+        assert!(reply["error"].as_str().is_some_and(|e| !e.is_empty()));
+    }
+    assert_eq!(app.session.catalog.photos().filter(|p| p.in_library()).count(), 1);
+    assert_eq!(app.session.undo.len(), steps);
+    assert!(app.session.catalog.stack_of(lightcraft_catalog::PhotoId(id)).is_none());
+    // the same picture twice: the duplicate is refused and the first placement stays
+    let first = request(&mut app, &ctx, "c0.place", json!({"png": good, "mode": "new-version"}));
+    assert_eq!(first["ok"], true, "{first}");
+    let again = request(&mut app, &ctx, "c0.place", json!({"png": good, "mode": "new-version"}));
+    assert_eq!(again["ok"], false, "{again}");
+    assert_eq!(app.session.catalog.photos().filter(|p| p.in_library()).count(), 2);
+}

@@ -6,7 +6,10 @@ use crate::{
     store::{Originals, content_hash, hash_of_path, original_path, storage_key},
 };
 use lightcraft_engine::catalog::{PhotoId, Source};
-use lightcraft_ui_egui::{LightcraftApp, c0_host::decode_file};
+use lightcraft_ui_egui::{
+    LightcraftApp,
+    c0_host::{decode_file, place_file},
+};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -54,8 +57,14 @@ pub(super) fn prepare(app: &LightcraftApp, method: &str, p: &mut Value) -> Resul
         return Ok(None);
     };
     match method {
-        "c0.openFile" => {
-            let (_, bytes) = decode_file(p)?;
+        "c0.openFile" | "c0.place" => {
+            // A placed picture is stored like an opened file, so it survives a reload.
+            let (_, bytes) = if method == "c0.place" {
+                let (name, text) = place_file(p)?;
+                decode_file(&json!({"name":name,"bytes":text}))?
+            } else {
+                decode_file(p)?
+            };
             let hash = content_hash(&bytes);
             if host.saved.borrow().contains(&hash) {
                 host.originals.insert(&hash, bytes.into());
@@ -63,7 +72,7 @@ pub(super) fn prepare(app: &LightcraftApp, method: &str, p: &mut Value) -> Resul
             }
             Ok(Some(Work { host, kind: Kind::Store { hash, bytes: bytes.into() } }))
         }
-        "c0.documentBytes" => {
+        "c0.documentBytes" | "c0.selection" => {
             if p.get("format").is_some_and(|v| !matches!(v.as_str(), Some("jpeg" | "png" | "tiff"))) {
                 return Ok(None);
             }

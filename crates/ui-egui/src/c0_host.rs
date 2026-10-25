@@ -1,5 +1,6 @@
 //! C0light's guest contract. Defaults leave upstream chrome and autosave semantics intact.
 
+mod ai;
 mod c0_chrome;
 mod c0_files;
 pub(crate) mod c0_panels;
@@ -7,6 +8,7 @@ pub(crate) mod c0_strip;
 
 pub use c0_chrome::{Chrome, about_links, community_url, contributor_link, external_link};
 pub use c0_files::{MAX_FILE_BYTES, MAX_REQUEST_BYTES, decode_file, encode_bytes};
+pub use ai::{MAX_PICTURE_BYTES, MAX_SELECTION_EDGE, place_file};
 pub use c0_strip::Modes;
 
 use lightcraft_catalog::{AlbumId, PhotoId};
@@ -36,6 +38,8 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, method: &str, params
             "c0.openFile" => c0_files::open(app, params),
             "c0.newDocument" => c0_files::new_document(app, params),
             "c0.cancelFileDialog" => Ok(c0_files::cancel(app)),
+            "c0.selection" => ai::selection(app, params),
+            "c0.place" => ai::place(app, params),
             "c0.set" => c0_panels::set(app, ctx, params),
             _ => Err(format!("unknown host method {method:?}")),
         }
