@@ -86,6 +86,7 @@ fn assign(t: &mut Tokens, key: &str, color: Color32) -> bool {
         pick,
         reject,
         caution,
-        mask_overlay
+        mask_overlay,
+        skeleton
     )
 }
