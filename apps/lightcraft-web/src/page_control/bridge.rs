@@ -133,7 +133,7 @@ pub fn run(app: &mut LightcraftApp, id: &str, text: &str, resolve: &js_sys::Func
             } else if request.generation != app.session.library_generation() {
                 json!({"ok":false,"error":"document changed while original bytes were loading; retry the request"})
             } else {
-                dispatch(app, request.method, request.params)
+                dispatch(app, request.method, request.params, None)
             };
             reply(&request.reply, &result);
             result
@@ -166,7 +166,7 @@ pub fn run(app: &mut LightcraftApp, id: &str, text: &str, resolve: &js_sys::Func
         };
         match super::io::prepare(app, &method, &mut params) {
             Err(error) => json!({"ok":false,"error":error}),
-            Ok(None) => dispatch(app, method, params),
+            Ok(None) => dispatch(app, method, params, Some(resolve)),
             Ok(Some(work)) => {
                 let request = Prepared { generation: app.session.library_generation(), ticket, method, params, reply: resolve.clone() };
                 match defer(work, request) {
@@ -182,7 +182,9 @@ pub fn run(app: &mut LightcraftApp, id: &str, text: &str, resolve: &js_sys::Func
     true
 }
 
-fn dispatch(app: &mut LightcraftApp, method: String, params: Value) -> Value {
+/// Runs one control request. `later` is the page promise's resolver: a synthetic-input gesture is
+/// answered through it once the app has consumed it, and `Value::Null` (no reply yet) is returned.
+fn dispatch(app: &mut LightcraftApp, method: String, params: Value, later: Option<&js_sys::Function>) -> Value {
     CONTEXT.with(|slot| {
         let Some(ctx) = slot.borrow().clone() else {
             return json!({"ok":false,"error":"app is not ready"});
@@ -191,8 +193,51 @@ fn dispatch(app: &mut LightcraftApp, method: String, params: Value) -> Value {
         match control::handle(app, &ctx, &req) {
             Outcome::Done(value) => value,
             Outcome::Screenshot { .. } => json!({"ok":false,"error":"viewport screenshots are not available in the page"}),
+            Outcome::Gesture { method, params } => {
+                let Some(resolve) = later else {
+                    return json!({"ok":false,"error":"input gestures cannot follow a file request"});
+                };
+                let (tx, rx) = std::sync::mpsc::channel();
+                if let Err(error) = lightcraft_ui_egui::c0_host::admit_gesture(app, &ctx, method, params, tx) {
+                    return json!({"ok":false,"error":error});
+                }
+                await_gesture(ctx, rx, resolve.clone());
+                Value::Null
+            }
         }
     })
+}
+
+/// Longest a page gesture waits for its answer; the app's own gesture deadline normally answers first.
+const GESTURE_WAIT_MS: f64 = 30_000.0;
+
+/// Keeps the app running passes until the queued gesture is answered, then resolves the promise.
+fn await_gesture(ctx: egui::Context, rx: std::sync::mpsc::Receiver<Value>, resolve: js_sys::Function) {
+    wasm_bindgen_futures::spawn_local(async move {
+        let start = js_sys::Date::now();
+        loop {
+            match rx.try_recv() {
+                Ok(value) => return reply(&resolve, &value),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    return reply(&resolve, &json!({"ok":false,"error":"the app dropped the gesture"}));
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            }
+            if js_sys::Date::now() - start > GESTURE_WAIT_MS {
+                return reply(&resolve, &json!({"ok":false,"error":"gesture timed out"}));
+            }
+            if let Some(pump) = Pump::get() {
+                pump.pass();
+            }
+            ctx.request_repaint();
+            let tick = js_sys::Promise::new(&mut |done, _| {
+                if let Some(window) = web_sys::window() {
+                    let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(&done, 8);
+                }
+            });
+            let _ = wasm_bindgen_futures::JsFuture::from(tick).await;
+        }
+    });
 }
 
 fn reply(resolve: &js_sys::Function, result: &Value) {

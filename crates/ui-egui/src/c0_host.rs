@@ -27,6 +27,19 @@ pub struct Host {
     files: c0_files::Files,
 }
 
+/// Queues a synthetic-input request (`Outcome::Gesture`) through the app's own admission, for a
+/// caller with no control channel (the page bridge). The answer arrives on `reply` once the UI has
+/// consumed the gesture's last event, or as an error at the app's gesture deadline.
+pub fn admit_gesture(
+    app: &mut LightcraftApp,
+    ctx: &egui::Context,
+    method: String,
+    params: Value,
+    reply: std::sync::mpsc::Sender<Value>,
+) -> Result<(), String> {
+    app.admit_gesture(ctx, method, params, reply)
+}
+
 pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, method: &str, params: &Value) -> Outcome {
     let result = if !params.is_object() && !params.is_null() {
         Err("params must be an object".into())

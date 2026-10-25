@@ -21,6 +21,7 @@ fn request(app: &mut LightcraftApp, ctx: &egui::Context, method: &str, params: V
     match control::handle(app, ctx, &req) {
         Outcome::Done(value) => value,
         Outcome::Screenshot { .. } => unreachable!("no screenshot requested"),
+        Outcome::Gesture { .. } => unreachable!("no gesture requested"),
     }
 }
 
