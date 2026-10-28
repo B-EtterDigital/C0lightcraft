@@ -6,7 +6,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 
 fn store() -> Id {
-    Id::new("c0light-theme-tokens")
+    Id::unique("c0light-theme-tokens")
 }
 
 pub fn set(ctx: &Context, value: &Value, report: &mut Value) {

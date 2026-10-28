@@ -109,7 +109,7 @@ pub(crate) fn float(app: &mut LightcraftApp, ui: &mut egui::Ui) -> bool {
     // beside the open right dock, not over it
     let dock = if app.ui.right == RightPanel::None { 0.0 } else { app.ui.right_width };
     let start = pos2((area.right() - width - dock - MARGIN).max(area.left()), area.top() + MARGIN);
-    egui::Area::new(Id::new("c0-tool-palette")).order(Order::Middle).default_pos(start).constrain_to(area).movable(true).show(&ctx, |ui| {
+    egui::Area::new(Id::unique("c0-tool-palette")).order(Order::Middle).default_pos(start).constrain_to(area).movable(true).show(&ctx, |ui| {
         let (grip, _) = ui.allocate_exact_size(vec2(width, GRIP_H), Sense::hover());
         ui.painter().rect_filled(grip, 0.0, t.chrome);
         ui.painter().line_segment([grip.center() - vec2(10.0, 0.0), grip.center() + vec2(10.0, 0.0)], egui::Stroke::new(2.0, t.text_dim));
