@@ -28,7 +28,7 @@ out="$root/dist/c0host"
 mkdir -p "$out"
 # Only clean the directory owned by this page.
 find "$out" -maxdepth 1 -type f -delete
-/bin/cp -f "$site"/* "$out/"
+/bin/cp -rf "$site"/. "$out/"  # upstream now also writes snippets/ (wasm-bindgen inline JS)
 /bin/cp -f c0/lightcraft-host/index.html "$out/index.html"
 /bin/cp -f LICENSE-MIT LICENSE-APACHE NOTICE assets/fonts/OFL-Inter.txt "$out/"
 # Upstream's compressed HTML describes its own page and must not shadow the guest.
