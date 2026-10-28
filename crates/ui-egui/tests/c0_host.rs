@@ -489,25 +489,24 @@ fn place_adds_a_new_version_stacked_next_to_the_source_as_one_undo_step() {
     let id = open_in_develop(&mut app, &ctx);
     let original = app.session.catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().source.clone();
     let steps = app.session.undo.len();
-    for (key, name, data) in [("png", "ai.png", solid_png(4, 3))] {
-        let reply = request(&mut app, &ctx, "c0.place", json!({key: STANDARD.encode(data), "name": name, "mode": "new-version"}));
-        assert_eq!(reply["ok"], true, "{reply}");
-        let r = &reply["result"];
-        let new = r["photoId"].as_u64().unwrap();
-        assert_ne!(new, id);
-        assert_eq!((r["placed"].as_str(), r["stackedWith"].as_u64()), (Some("photo"), Some(id)));
-        let catalog = &app.session.catalog;
-        assert_eq!(catalog.photos().filter(|p| p.in_library()).count(), 2);
-        let stack = catalog.stack_of(lightcraft_catalog::PhotoId(id)).expect("stacked with the source");
-        assert!(stack.photos.iter().any(|p| p.0 == new));
-        assert_eq!(catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().source, original, "the original file is untouched");
-        assert_eq!(app.session.undo.len(), steps + 1, "one undo step");
-        // one Ctrl+Z removes the picture and the stack
-        app.run("edit.undo", json!({})).unwrap();
-        assert_eq!(app.session.catalog.photos().filter(|p| p.in_library()).count(), 1);
-        assert!(app.session.catalog.stack_of(lightcraft_catalog::PhotoId(id)).is_none());
-        assert_eq!(app.session.undo.len(), steps);
-    }
+    let (key, name, data) = ("png", "ai.png", solid_png(4, 3));
+    let reply = request(&mut app, &ctx, "c0.place", json!({key: STANDARD.encode(data), "name": name, "mode": "new-version"}));
+    assert_eq!(reply["ok"], true, "{reply}");
+    let r = &reply["result"];
+    let new = r["photoId"].as_u64().unwrap();
+    assert_ne!(new, id);
+    assert_eq!((r["placed"].as_str(), r["stackedWith"].as_u64()), (Some("photo"), Some(id)));
+    let catalog = &app.session.catalog;
+    assert_eq!(catalog.photos().filter(|p| p.in_library()).count(), 2);
+    let stack = catalog.stack_of(lightcraft_catalog::PhotoId(id)).expect("stacked with the source");
+    assert!(stack.photos.iter().any(|p| p.0 == new));
+    assert_eq!(catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().source, original, "the original file is untouched");
+    assert_eq!(app.session.undo.len(), steps + 1, "one undo step");
+    // one Ctrl+Z removes the picture and the stack
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.catalog.photos().filter(|p| p.in_library()).count(), 1);
+    assert!(app.session.catalog.stack_of(lightcraft_catalog::PhotoId(id)).is_none());
+    assert_eq!(app.session.undo.len(), steps);
 }
 
 #[test]

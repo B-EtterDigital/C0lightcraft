@@ -191,6 +191,7 @@ fn dispatch(app: &mut LightcraftApp, method: String, params: Value) -> Value {
         match control::handle(app, &ctx, &req) {
             Outcome::Done(value) => value,
             Outcome::Screenshot { .. } => json!({"ok":false,"error":"viewport screenshots are not available in the page"}),
+            Outcome::Gesture { .. } => json!({"ok":false,"error":"synthetic input is not available in the page"}),
         }
     })
 }
