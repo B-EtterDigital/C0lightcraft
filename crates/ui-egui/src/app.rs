@@ -27,7 +27,7 @@ impl LightcraftApp {
         // AI mask requests run on the model's worker; frames apply their results (never wait)
         session.segmenter.background = true;
         Self {
-            c0: c0_host::Host::default(),
+            c0: crate::c0_host::Host::default(),
             session,
             ui: UiState::default(),
             services,
