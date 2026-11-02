@@ -60,6 +60,9 @@ fn assign(t: &mut Tokens, key: &str, color: Color32) -> bool {
     }
     colors!(
         chrome,
+        ring_active,
+        ring_inner,
+        ring_selected,
         canvas,
         grid_bg,
         cell,

@@ -20,6 +20,7 @@ fn request(app: &mut LightcraftApp, ctx: &egui::Context, method: &str, params: V
         Outcome::Done(value) => value,
         Outcome::Screenshot { .. } => panic!("unexpected screenshot"),
         Outcome::Gesture { .. } => panic!("unexpected gesture"),
+        Outcome::Later => panic!("unexpected deferred reply"),
     }
 }
 
@@ -223,10 +224,10 @@ fn every_colour_token_is_overridable_across_theme_changes_and_isolated() {
     let mut app = make_app();
     let source = include_str!("../src/theme.rs");
     let fields: Vec<_> = source.lines().filter_map(|l| l.trim().strip_prefix("pub ").and_then(|s| s.strip_suffix(": Color32,"))).collect();
-    assert_eq!(fields.len(), 29);
+    assert_eq!(fields.len(), 32);
     let tokens: serde_json::Map<_, _> = fields.iter().map(|f| ((*f).into(), json!("#12345678"))).collect();
     let reply = request(&mut app, &ctx, "c0.set", json!({"themeTokens":tokens}));
-    assert_eq!(reply["result"]["applied"].as_array().unwrap().len(), 29);
+    assert_eq!(reply["result"]["applied"].as_array().unwrap().len(), 32);
     for kind in ThemeKind::ALL {
         theme::apply_kind(&ctx, kind);
         assert_eq!(Tokens::get(&ctx).accent, egui::Color32::from_rgba_unmultiplied(0x12, 0x34, 0x56, 0x78));

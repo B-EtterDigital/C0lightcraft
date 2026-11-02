@@ -192,6 +192,8 @@ fn dispatch(app: &mut LightcraftApp, method: String, params: Value) -> Value {
             Outcome::Done(value) => value,
             Outcome::Screenshot { .. } => json!({"ok":false,"error":"viewport screenshots are not available in the page"}),
             Outcome::Gesture { .. } => json!({"ok":false,"error":"synthetic input is not available in the page"}),
+            // Answered later on the reply channel, which a page request does not keep (only the native folder sweep does this).
+            Outcome::Later => json!({"ok":false,"error":"this request answers later and is not available in the page"}),
         }
     })
 }

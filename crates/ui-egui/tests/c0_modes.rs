@@ -22,6 +22,7 @@ fn request(app: &mut LightcraftApp, ctx: &egui::Context, method: &str, params: V
         Outcome::Done(value) => value,
         Outcome::Screenshot { .. } => unreachable!("no screenshot requested"),
         Outcome::Gesture { .. } => unreachable!("no gesture requested"),
+        Outcome::Later => unreachable!("no deferred reply requested"),
     }
 }
 
