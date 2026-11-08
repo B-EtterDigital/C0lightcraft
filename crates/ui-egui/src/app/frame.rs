@@ -37,6 +37,7 @@ impl LightcraftApp {
         // when the dialog is actually presented (`dialogs::show`), so a host that runs `logic`
         // and quits before a visible frame does not burn the tour.
         if self.ui.dialog.is_none()
+            && self.c0.chrome.start_screen
             && self.library_problem.as_ref().is_none_or(|p| p.dismissed)
             && let Some(dialog) = startup::open_at_startup(self.ui.seen_version.as_deref(), self.headless_host)
         {
