@@ -74,11 +74,11 @@ fn install(app: &mut LightcraftApp) {
     app.c0.files.installed = true;
     let files = app.c0.files.originals.clone();
     let fallback = app.session.media.file_loader.clone();
-    app.session.media.file_loader = Some(Arc::new(move |path, edge| {
+    app.session.media.file_loader = Some(Arc::new(move |path, edge, with| {
         let bytes = files.lock().unwrap_or_else(|e| e.into_inner()).get(path).cloned();
         match bytes {
-            Some(bytes) => lightcraft_engine::files::load_bytes(&bytes, edge),
-            None => fallback.as_ref().ok_or_else(|| format!("{path}: original unavailable"))?(path, edge),
+            Some(bytes) => lightcraft_engine::files::load_bytes_decoded(&bytes, edge, with),
+            None => fallback.as_ref().ok_or_else(|| format!("{path}: original unavailable"))?(path, edge, with),
         }
     }));
     let files = app.c0.files.originals.clone();
