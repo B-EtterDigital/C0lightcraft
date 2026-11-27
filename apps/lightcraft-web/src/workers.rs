@@ -322,6 +322,7 @@ impl Workers {
                     quick: None,
                     display: None,
                     frame: None,
+                    slide_photo: None,
                 };
                 g.done.push((b.slot, r, 0.0));
             }
@@ -393,8 +394,10 @@ impl Workers {
             });
         }
         g.remote_done += 1;
+        let mut slide_photo = None;
         let rendered = match (rendered, &b.slide) {
             (Ok(mut r), Some(slide)) => {
+                slide_photo = Some([r.image.width, r.image.height]);
                 r.image = slide.compose(&r.image);
                 Ok(r)
             }
@@ -414,6 +417,7 @@ impl Workers {
                 quick: None,
                 display: None,
                 frame: None,
+                slide_photo,
             },
             ms,
         ));
@@ -469,6 +473,7 @@ impl RenderOffload for Workers {
                 quick: None,
                 display: None,
                 frame: None,
+                slide_photo: None,
             };
             g.done.push((slot, r, 0.0));
             return None;
